@@ -16,22 +16,25 @@ from mediapipe.tasks.python import vision
 pyautogui.FAILSAFE = False
 SCREEN_W, SCREEN_H = pyautogui.size()
 
-SMOOTHING = 0.85          # カーソル平滑化
-BLINK_EAR_TH = 0.18       # まばたき閾値
-BLINK_FRAMES = 3          # 連続フレーム数
-WINK_FRAMES = 3           # ウィンク保持フレーム
-ACTION_COOLDOWN = 0.4     # クリック間隔[s]
-GAZE_HISTORY_SIZE = 5     # 視線平滑化サンプル
-DRIFT_THRESHOLD = 0.015   # ニュートラル再学習条件
+SMOOTHING = 0.82                  # 基本カーソル平滑化
+SMOOTHING_FAST = 0.55             # 大きな移動時の平滑化
+SMOOTHING_FAST_THRESHOLD = 120    # ピクセル差で高速化を判定
+BLINK_EAR_TH = 0.18               # まばたき閾値
+ACTION_COOLDOWN = 0.4             # クリック間隔[s]
+GAZE_HISTORY_SIZE = 4             # 視線平滑化サンプル
+DRIFT_THRESHOLD = 0.015           # ニュートラル再学習条件
 NEUTRAL_LEARNING_RATE = 0.02
+WINK_MIN_TIME = 0.08              # 片目閉じ保持秒数
+BLINK_MIN_TIME = 0.12             # 両目閉じ保持秒数
+WINK_EAR_MARGIN = 0.02            # ウィンク判定用の反対側開き余裕
 
 smooth_x, smooth_y = SCREEN_W // 2, SCREEN_H // 2
-blink_counter = 0
-left_wink_counter = 0
-right_wink_counter = 0
 last_action_time = 0.0
 gaze_history = deque(maxlen=GAZE_HISTORY_SIZE)
 last_gaze = None
+left_wink_start = None
+right_wink_start = None
+blink_start = None
 
 # 視線ニュートラル（自動）
 neutral_x = None
@@ -168,8 +171,12 @@ while True:
         px = int(tx * SCREEN_W)
         py = int(ty * SCREEN_H)
 
-        smooth_x = int(smooth_x * SMOOTHING + px * (1 - SMOOTHING))
-        smooth_y = int(smooth_y * SMOOTHING + py * (1 - SMOOTHING))
+        cursor_delta = np.hypot(px - smooth_x, py - smooth_y)
+        smoothing_factor = (
+            SMOOTHING_FAST if cursor_delta > SMOOTHING_FAST_THRESHOLD else SMOOTHING
+        )
+        smooth_x = int(smooth_x * smoothing_factor + px * (1 - smoothing_factor))
+        smooth_y = int(smooth_y * smoothing_factor + py * (1 - smoothing_factor))
 
         pyautogui.moveTo(smooth_x, smooth_y)
 
@@ -180,33 +187,41 @@ while True:
         now = time.time()
         left_closed = left_ear < BLINK_EAR_TH
         right_closed = right_ear < BLINK_EAR_TH
+        left_open_enough = left_ear > (BLINK_EAR_TH + WINK_EAR_MARGIN)
+        right_open_enough = right_ear > (BLINK_EAR_TH + WINK_EAR_MARGIN)
 
-        if left_closed and not right_closed:
-            left_wink_counter += 1
-        else:
-            if (left_wink_counter >= WINK_FRAMES and
+        if left_closed and right_open_enough:
+            if left_wink_start is None:
+                left_wink_start = now
+            elif (now - left_wink_start >= WINK_MIN_TIME and
                     now - last_action_time > ACTION_COOLDOWN):
                 pyautogui.click(button='left')
                 last_action_time = now
-            left_wink_counter = 0
-
-        if right_closed and not left_closed:
-            right_wink_counter += 1
+                left_wink_start = None
         else:
-            if (right_wink_counter >= WINK_FRAMES and
+            left_wink_start = None
+
+        if right_closed and left_open_enough:
+            if right_wink_start is None:
+                right_wink_start = now
+            elif (now - right_wink_start >= WINK_MIN_TIME and
                     now - last_action_time > ACTION_COOLDOWN):
                 pyautogui.click(button='right')
                 last_action_time = now
-            right_wink_counter = 0
+                right_wink_start = None
+        else:
+            right_wink_start = None
 
         if left_closed and right_closed:
-            blink_counter += 1
-        else:
-            if (blink_counter >= BLINK_FRAMES and
+            if blink_start is None:
+                blink_start = now
+            elif (now - blink_start >= BLINK_MIN_TIME and
                     now - last_action_time > ACTION_COOLDOWN):
                 pyautogui.click()
                 last_action_time = now
-            blink_counter = 0
+                blink_start = None
+        else:
+            blink_start = None
 
         # ---- デバッグ描画 ----
         cx = int(gaze_x * w)
