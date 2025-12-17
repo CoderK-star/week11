@@ -24,9 +24,9 @@ ACTION_COOLDOWN = 0.4             # クリック間隔[s]
 GAZE_HISTORY_SIZE = 4             # 視線平滑化サンプル
 DRIFT_THRESHOLD = 0.015           # ニュートラル再学習条件
 NEUTRAL_LEARNING_RATE = 0.02
-WINK_MIN_TIME = 0.08              # 片目閉じ保持秒数
+WINK_MIN_TIME = 0.04              # 片目閉じ保持秒数
 BLINK_MIN_TIME = 0.12             # 両目閉じ保持秒数
-WINK_EAR_MARGIN = 0.02            # ウィンク判定用の反対側開き余裕
+WINK_EAR_MARGIN = 0.01           # ウィンク判定用の反対側開き余裕
 
 smooth_x, smooth_y = SCREEN_W // 2, SCREEN_H // 2
 last_action_time = 0.0
