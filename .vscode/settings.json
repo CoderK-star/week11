@@ -1,0 +1,4 @@
+{
+  "liveServer.settings.CustomBrowser": "chrome",
+  "python.defaultInterpreterPath": "${workspaceFolder}/.venv/Scripts/python.exe"
+}
