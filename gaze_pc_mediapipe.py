@@ -18,7 +18,7 @@ SCREEN_W, SCREEN_H = pyautogui.size()
 
 SMOOTHING = 0.82                  # 基本カーソル平滑化
 SMOOTHING_FAST = 0.55             # 大きな移動時の平滑化
-SMOOTHING_FAST_THRESHOLD = 120    # ピクセル差で高速化を判定
+SMOOTHING_FAST_THRESHOLD = 30    # ピクセル差で高速化を判定
 BLINK_EAR_TH = 0.18               # まばたき閾値
 ACTION_COOLDOWN = 0.4             # クリック間隔[s]
 GAZE_HISTORY_SIZE = 4             # 視線平滑化サンプル
