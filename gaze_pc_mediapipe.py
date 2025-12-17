@@ -16,8 +16,8 @@ from mediapipe.tasks.python import vision
 pyautogui.FAILSAFE = False
 SCREEN_W, SCREEN_H = pyautogui.size()
 
-SMOOTHING = 0.82                  # 基本カーソル平滑化
-SMOOTHING_FAST = 0.55             # 大きな移動時の平滑化
+SMOOTHING = 0.20                  # 基本カーソル平滑化
+SMOOTHING_FAST = 0.10             # 大きな移動時の平滑化
 SMOOTHING_FAST_THRESHOLD = 30    # ピクセル差で高速化を判定
 BLINK_EAR_TH = 0.18               # まばたき閾値
 ACTION_COOLDOWN = 0.4             # クリック間隔[s]
